@@ -8,7 +8,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultEventHandler{
+public class EventHandler {
 
     private List<EventMethod> listeners = new ArrayList<>();
 
@@ -19,7 +19,7 @@ public class DefaultEventHandler{
                 continue;
             if (!m.isAnnotationPresent(Event.class))
                 continue;
-            if (!m.getParameterTypes()[0].isInstance(BasicEvent.class))
+            if (!BasicEvent.class.isAssignableFrom(m.getParameterTypes()[0]))
                 continue;
             listeners.add(new EventMethod(listener,m, (Class<? extends Event>) m.getParameterTypes()[0]));
         }
