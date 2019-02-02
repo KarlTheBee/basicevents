@@ -8,12 +8,12 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EventHandler {
+public class EventHandler{
 
     private List<EventMethod> listeners = new ArrayList<>();
 
-   
-    public synchronized void register(EventListener listener) {
+
+    public void register(EventListener listener) {
         for(Method m : listener.getClass().getMethods()){
             if (m.getParameterCount()!=1)
                 continue;
@@ -26,8 +26,8 @@ public class EventHandler {
     }
 
    
-    public synchronized void remove(EventListener listener) {
-        listeners.removeIf(em -> em.object==listener);
+    public synchronized boolean remove(EventListener listener) {
+        return listeners.removeIf(em -> em.object==listener);
     }
 
    
@@ -36,19 +36,20 @@ public class EventHandler {
     }
 
    
-    public synchronized void handle(BasicEvent event) {
-        for(EventMethod listener : listeners){
-            if (listener.type != event.getClass())
-                continue;
-            try {
-                listener.method.invoke(listener.object,event);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                System.out.println("Exception on event : ");
-                e.printStackTrace();
-            }
-        }
+    public void handle(BasicEvent event) {
+        //streaming avoids concurrency errors!
+        listeners.stream()
+                .filter(listener -> listener.type == event.getClass())
+                .forEach(listener -> {
+                    try {
+                        listener.method.invoke(listener.object,event);
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        System.out.println("Exception on event : ");
+                        e.printStackTrace();
+                    }
+                });
     }
 
     private class EventMethod{
